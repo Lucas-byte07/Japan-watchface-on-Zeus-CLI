@@ -5,7 +5,6 @@ Car and Japan themed data-heavy watchface developed for the Amazfit T-Rex 3, Ama
 ## Tools used
 - Zepp OS SDK v3.5
 - Zeus CLI
-- FontTools (pyftsubset) para otimização de fontes nativas
 ## Watchface features
 -12 fps animation of cars going around Japan  
 -Clock (hours, minutes and seconds) including a countdown shortcut  
