@@ -1,4 +1,4 @@
-import { createWidget, widget, align, prop, text_style, anim_status, events, data_type } from '@zos/ui'
+import { createWidget, widget, align, prop, text_style, anim_status, events, data_type, show_level } from '@zos/ui'
 import { getDeviceInfo } from '@zos/device'
 import { Time, Calorie, Battery, Weather, Barometer, Distance, HeartRate } from '@zos/sensor'
 import { openApplication } from '@zos/app'
@@ -7,6 +7,31 @@ const FONT_PATH = 'font/arial_watchface.ttf'
 const CAL_ICON_PREFIX = 'cal/kcal_'
 const BAT_ICON_PREFIX = 'bat/bat_'
 const WEATHER_ICON_PREFIX = 'clima/clima_'
+
+// ==========================================================================
+// AoD (Always On Display)
+// ==========================================================================
+// O Zepp OS decide automaticamente qual conjunto de widgets aparece em
+// cada estado da tela através da propriedade "show_level" passada na
+// CRIAÇÃO do widget (não é possível alterá-la depois com setProperty —
+// só vale o valor definido no createWidget). Por isso:
+//  - todo widget da interface NORMAL (colorida) recebeu show_level:
+//    NORMAL_ONLY, para sumir quando a tela entra em modo AoD;
+//  - os widgets NOVOS (fundo aod.png, horas/minutos brancos e os ícones
+//    de caloria/bateria em branco) recebem show_level: AOD_ONLY, para só
+//    aparecerem em modo AoD.
+// NOTA: "AOD_ONLY" corresponde a show_level.ONLY_AOD na API do Zepp OS. A
+// documentação oficial tem uma inconsistência de digitação nesse nome
+// específico ("ONAL_AOD" em algumas páginas) — se o simulador (zeus dev)
+// acusar "ONLY_AOD is undefined", confira a definição exata em
+// node_modules/@zeppos/device-types (ou no autocomplete do editor) e
+// ajuste esta constante.
+const NORMAL_ONLY = show_level.ONLY_NORMAL
+const AOD_ONLY = show_level.ONLY_AOD
+
+const CAL_AOD_ICON_PREFIX = 'cal_aod/kcal_'
+const BAT_AOD_ICON_PREFIX = 'bat_aod/bat_'
+const WEATHER_AOD_ICON_PREFIX = 'clima_aod/clima_'
 
 function pad2(n) {
   return n.toString().padStart(2, '0')
@@ -36,6 +61,15 @@ Page({
     battery: null,
     batteryIconWidget: null,
     batteryText: null,
+    // --- Widgets exclusivos do AoD (mesmas posições dos originais acima,
+    // porém com show_level: AOD_ONLY e imagens/cores próprias) ---
+    aodHourText: null,
+    aodMinuteText: null,
+    aodCalorieIconWidget: null,
+    aodCalorieText: null,
+    aodBatteryIconWidget: null,
+    aodBatteryText: null,
+    aodWeatherIconWidget: null,
     calorieChangeCallback: null,
     batteryChangeCallback: null,
     alertWidgets: null,      // { battery, uvi, bpm, biocharge } -> widget IMG
@@ -73,6 +107,7 @@ Page({
     //A animação será temporariamente transformada em comentário por razões de otimização do simulador.
     // 1) Animação de fundo — 118 frames a 12 fps
     const animationWidget = createWidget(widget.IMG_ANIM, {
+      show_level: NORMAL_ONLY,
       x: 35,
       y: 123,
       w: width,
@@ -90,6 +125,7 @@ Page({
     //
     //2) Imagem de fundo, sobreposta a animação para evitar vazamento dos frames
     createWidget(widget.IMG, {
+      show_level: NORMAL_ONLY,
       x: 0,
       y: 0,
       w: width,
@@ -112,6 +148,7 @@ Page({
     const SEC_Y = 353
 
     this.state.hourText = createWidget(widget.TEXT, {
+      show_level: NORMAL_ONLY,
       x: -40,
       y: 358,
       w: HM_WIDTH,
@@ -126,6 +163,7 @@ Page({
     })
 
     this.state.minuteText = createWidget(widget.TEXT, {
+      show_level: NORMAL_ONLY,
       x: 44,
       y: 358,
       w: HM_WIDTH,
@@ -140,6 +178,7 @@ Page({
     })
 
     this.state.secondText = createWidget(widget.TEXT, {
+      show_level: NORMAL_ONLY,
       x: SEC_X,
       y: SEC_Y,
       w: SEC_WIDTH,
@@ -160,11 +199,13 @@ Page({
       const newHour = pad2(this.state.time.getHours())
       if (newHour !== this.state.lastHour) {
         this.state.hourText.setProperty(prop.TEXT, newHour)
+        if (this.state.aodHourText) this.state.aodHourText.setProperty(prop.TEXT, newHour)
         this.state.lastHour = newHour
       }
       const newMinute = pad2(this.state.time.getMinutes())
       if (newMinute !== this.state.lastMinute) {
         this.state.minuteText.setProperty(prop.TEXT, newMinute)
+        if (this.state.aodMinuteText) this.state.aodMinuteText.setProperty(prop.TEXT, newMinute)
         this.state.lastMinute = newMinute
       }
     }
@@ -179,6 +220,7 @@ Page({
     const calTarget = calorie.getTarget()
 
     this.state.calorieIconWidget = createWidget(widget.IMG, {
+      show_level: NORMAL_ONLY,
       x: 0,
       y: 0,
       src: `${CAL_ICON_PREFIX}${getCalorieLevel(calCurrent, calTarget)}.png`,
@@ -190,6 +232,7 @@ Page({
     const CAL_TEXT_Y = 122
 
     this.state.calorieText = createWidget(widget.TEXT, {
+      show_level: NORMAL_ONLY,
       x: CAL_TEXT_X,
       y: CAL_TEXT_Y,
       w: CAL_TEXT_WIDTH,
@@ -210,6 +253,12 @@ Page({
         src: `${CAL_ICON_PREFIX}${getCalorieLevel(current, target)}.png`,
       })
       this.state.calorieText.setProperty(prop.TEXT, current.toString())
+      if (this.state.aodCalorieIconWidget) {
+        this.state.aodCalorieIconWidget.setProperty(prop.MORE, {
+          src: `${CAL_AOD_ICON_PREFIX}${getCalorieLevel(current, target)}.png`,
+        })
+        this.state.aodCalorieText.setProperty(prop.TEXT, current.toString())
+      }
     }
 
     this.state.calorieChangeCallback = updateCalorie
@@ -225,6 +274,7 @@ Page({
     const BAT_ICON_Y = 0
 
     this.state.batteryIconWidget = createWidget(widget.IMG, {
+      show_level: NORMAL_ONLY,
       x: BAT_ICON_X,
       y: BAT_ICON_Y,
       src: `${BAT_ICON_PREFIX}${percentToLevel(batCurrent)}.png`,
@@ -236,6 +286,7 @@ Page({
     const BAT_TEXT_Y = CAL_TEXT_Y
 
     this.state.batteryText = createWidget(widget.TEXT, {
+      show_level: NORMAL_ONLY,
       x: BAT_TEXT_X,
       y: BAT_TEXT_Y,
       w: BAT_TEXT_WIDTH,
@@ -262,11 +313,118 @@ Page({
         src: `${BAT_ICON_PREFIX}${percentToLevel(current)}.png`,
       })
       this.state.batteryText.setProperty(prop.TEXT, `${current}%`)
+      if (this.state.aodBatteryIconWidget) {
+        this.state.aodBatteryIconWidget.setProperty(prop.MORE, {
+          src: `${BAT_AOD_ICON_PREFIX}${percentToLevel(current)}.png`,
+        })
+        this.state.aodBatteryText.setProperty(prop.TEXT, `${current}%`)
+      }
       setAlertState('battery', current < BATTERY_ALERT_THRESHOLD)
     }
 
     this.state.batteryChangeCallback = updateBattery
     battery.onChange(this.state.batteryChangeCallback)
+
+    // ==========================================================================
+    // AoD (Always On Display) — fundo, horas/minutos e widgets de
+    // caloria/bateria. Ficam ocultos na interface normal e só aparecem
+    // quando a tela entra em modo AoD (graças ao show_level: AOD_ONLY).
+    // Usam exatamente as mesmas coordenadas dos elementos originais acima.
+    // ==========================================================================
+
+    // Fundo do AoD. Troque aod.png por uma imagem majoritariamente preta —
+    // é o que a especificação de AoD da Zepp recomenda (poucos pixels
+    // acesos, sem elementos coloridos).
+    createWidget(widget.IMG, {
+      show_level: AOD_ONLY,
+      x: 0,
+      y: 0,
+      w: width,
+      h: height,
+      src: 'aod.png',
+    })
+
+    // Horas e minutos — mesma posição/tamanho do relógio normal, sempre em
+    // branco.
+    this.state.aodHourText = createWidget(widget.TEXT, {
+      show_level: AOD_ONLY,
+      x: -40,
+      y: 358,
+      w: HM_WIDTH,
+      h: HM_HEIGHT,
+      color: 0xffffff,
+      text_size: HM_TEXT_SIZE,
+      align_h: align.CENTER_H,
+      align_v: align.CENTER_V,
+      text_style: text_style.NONE,
+      font: FONT_PATH,
+      text: pad2(time.getHours()),
+    })
+
+    this.state.aodMinuteText = createWidget(widget.TEXT, {
+      show_level: AOD_ONLY,
+      x: 44,
+      y: 358,
+      w: HM_WIDTH,
+      h: HM_HEIGHT,
+      color: 0xffffff,
+      text_size: HM_TEXT_SIZE,
+      align_h: align.CENTER_H,
+      align_v: align.CENTER_V,
+      text_style: text_style.NONE,
+      font: FONT_PATH,
+      text: pad2(time.getMinutes()),
+    })
+
+    // Widget de calorias — mesma posição/tamanho do ícone e do texto
+    // originais, com os ícones vindos de cal_aod (kcal_0.png .. kcal_10.png)
+    // e número sempre branco.
+    this.state.aodCalorieIconWidget = createWidget(widget.IMG, {
+      show_level: AOD_ONLY,
+      x: 0,
+      y: 0,
+      src: `${CAL_AOD_ICON_PREFIX}${getCalorieLevel(calCurrent, calTarget)}.png`,
+    })
+
+    this.state.aodCalorieText = createWidget(widget.TEXT, {
+      show_level: AOD_ONLY,
+      x: CAL_TEXT_X,
+      y: CAL_TEXT_Y,
+      w: CAL_TEXT_WIDTH,
+      h: CAL_TEXT_HEIGHT,
+      color: 0xffffff,
+      text_size: CAL_TEXT_HEIGHT,
+      align_h: align.CENTER_H,
+      align_v: align.CENTER_V,
+      text_style: text_style.NONE,
+      font: FONT_PATH,
+      text: calCurrent.toString(),
+    })
+
+    // Widget de bateria — mesma posição/tamanho do ícone e do texto
+    // originais, com os ícones vindos de bat_aod (bat_0.png .. bat_10.png)
+    // e número sempre branco.
+    this.state.aodBatteryIconWidget = createWidget(widget.IMG, {
+      show_level: AOD_ONLY,
+      x: BAT_ICON_X,
+      y: BAT_ICON_Y,
+      src: `${BAT_AOD_ICON_PREFIX}${percentToLevel(batCurrent)}.png`,
+    })
+
+    this.state.aodBatteryText = createWidget(widget.TEXT, {
+      show_level: AOD_ONLY,
+      x: BAT_TEXT_X,
+      y: BAT_TEXT_Y,
+      w: BAT_TEXT_WIDTH,
+      h: BAT_TEXT_HEIGHT,
+      color: 0xffffff,
+      text_size: BAT_TEXT_HEIGHT,
+      align_h: align.CENTER_H,
+      align_v: align.CENTER_V,
+      text_style: text_style.NONE,
+      font: FONT_PATH,
+      text: `${batCurrent}%`,
+    })
 
     // ====================================================================
     //  Clima
@@ -320,6 +478,7 @@ Page({
       ...Array.from({ length: 11 }, (_, i) => `uvi/uvi_${i}.png`), // índices 1-11 = UVI real 0-10
     ]
     this.state.uviWidget = createWidget(widget.IMG_LEVEL, {
+      show_level: NORMAL_ONLY,
       x: 206,
       y: 0, 
       image_array: uviImages,
@@ -340,6 +499,7 @@ Page({
       ...Array.from({ length: 11 }, (_, i) => `umidade/umi_${i}.png`),
     ]
     this.state.humidityWidget = createWidget(widget.IMG_LEVEL, {
+      show_level: NORMAL_ONLY,
       x: 217,
       y: 10,
       image_array: humImages,
@@ -349,18 +509,34 @@ Page({
 
     // 9) Imagem isolada — proposital, deve cobrir UVI/umidade e por isso é
     // criada DEPOIS dos ARCs (ordem de criação = ordem de camada no Zepp OS).
-    createWidget(widget.IMG, { x: 206, y: 0, w: width, h: height, src: 'uviumi.png' })
+    createWidget(widget.IMG, { x: 206, y: 0, w: width, h: height, src: 'uviumi.png', show_level: NORMAL_ONLY })
 
     // 10) Weather Imagem — agora usa o "index" correto vindo do sensor
     const weatherIconList = Array.from({ length: 29 }, (_, i) => `${WEATHER_ICON_PREFIX}${i}.png`)
     this.state.weatherIconWidget = createWidget(widget.IMG_LEVEL, {
+      show_level: NORMAL_ONLY,
       x: 223, y: 16,
       image_array: weatherIconList,
       image_length: 29,
       type: data_type.WEATHER,
     })
+
+    // 10.1) Weather Imagem — versão AoD. Mesmas propriedades do widget
+    // acima (mesma posição, mesmo tamanho, mesmo binding a
+    // data_type.WEATHER — o firmware atualiza os dois automaticamente,
+    // sem precisar de callback em JS), só troca a origem das imagens para
+    // a pasta clima_aod (clima_0.png .. clima_28.png).
+    const weatherAodIconList = Array.from({ length: 29 }, (_, i) => `${WEATHER_AOD_ICON_PREFIX}${i}.png`)
+    this.state.aodWeatherIconWidget = createWidget(widget.IMG_LEVEL, {
+      show_level: AOD_ONLY,
+      x: 223, y: 16,
+      image_array: weatherAodIconList,
+      image_length: 29,
+      type: data_type.WEATHER,
+    })
     // 11) Nome da cidade
     this.state.cityText = createWidget(widget.TEXT, {
+      show_level: NORMAL_ONLY,
       x: 190, y: 88, w: 100, h: 25,
       color: 0xf1829b, text_size: 25,
       align_h: align.CENTER_H, align_v: align.CENTER_V,
@@ -372,6 +548,7 @@ Page({
     // widget nativo TEXT_FONT vinculado a data_type.WEATHER_CURRENT, que o
     // sistema atualiza sozinho (sem precisar de setProperty manual).
     this.state.tempText = createWidget(widget.TEXT_FONT, {
+      show_level: NORMAL_ONLY,
       x: 104, y: 32, w: 100, h: 15,
       color: 0xff003d, text_size: 15,
       align_h: align.CENTER_H, align_v: align.CENTER_V,
@@ -380,6 +557,7 @@ Page({
     })
     //12.1)Unidade de temperatura
     this.state.tempUnit = createWidget(widget.TEXT, {
+      show_level: NORMAL_ONLY,
       x: 163, y: 32,
       w: 20, h: 15,
       color: 0xff003d,
@@ -391,6 +569,7 @@ Page({
     // 13) Temperatura mínima / máxima — isso SIM vem do sensor Weather (high/low),
     // e volta a funcionar assim que a leitura de forecastData é corrigida acima.
     this.state.tempMinMaxText = createWidget(widget.TEXT, {
+      show_level: NORMAL_ONLY,
       x: 111, y: 56, w: 150, h: 30,
       color: 0xff003d, text_size: 20,
       align_h: align.CENTER_H, align_v: align.CENTER_V,
@@ -401,6 +580,7 @@ Page({
     // 14) Força do vento — também não existe no sensor Weather; mesmo esquema
     // do tempText, vinculado a data_type.WIND.
     this.state.windText = createWidget(widget.TEXT_FONT, {
+      show_level: NORMAL_ONLY,
       x: 239, y: 60, w: 100, h: 20,
       color: 0xffffff, text_size: 20,
       align_h: align.CENTER_H, align_v: align.CENTER_V,
@@ -435,6 +615,7 @@ Page({
     const PRESSURE_TEXT_Y = 30
 
     this.state.pressureText = createWidget(widget.TEXT, {
+      show_level: NORMAL_ONLY,
       x: PRESSURE_TEXT_X,
       y: PRESSURE_TEXT_Y,
       w: PRESSURE_TEXT_WIDTH,
@@ -461,6 +642,7 @@ Page({
     const DIST_TEXT_Y = 338
 
     this.state.distanceText = createWidget(widget.TEXT, {
+      show_level: NORMAL_ONLY,
       x: DIST_TEXT_X,
       y: DIST_TEXT_Y,
       w: DIST_TEXT_WIDTH,
@@ -484,6 +666,7 @@ Page({
     const now = new Date()
 
     this.state.dateText = createWidget(widget.TEXT, {
+      show_level: NORMAL_ONLY,
       x: 76, y: 368, w: 100, h: 20,
       color: 0xff003d, // Mesma cor das horas
       text_size: 19,
@@ -493,6 +676,7 @@ Page({
     })
 
     this.state.dayOfWeekText = createWidget(widget.TEXT, {
+      show_level: NORMAL_ONLY,
       x: 305, y: 365, w: 100, h: 30,
       color: 0xffffff, // Mesma cor dos minutos
       text_size: 24,
@@ -513,6 +697,7 @@ Page({
     // Texto do BPM — usamos getLast() para a primeira renderização (último
     // valor já medido pelo relógio), antes de o monitoramento contínuo começar.
     this.state.bpmText = createWidget(widget.TEXT, {
+      show_level: NORMAL_ONLY,
       x: 218, y: 436, w: 100, h: 30,
       color: 0xffffff, // Cor dos minutos
       text_size: 25,
@@ -523,6 +708,7 @@ Page({
 
     // Barra de progresso (99x9)
     this.state.bpmBar = createWidget(widget.FILL_RECT, {
+      show_level: NORMAL_ONLY,
       x: 191, y: 463, w: 99, h: 9,
       radius: 0,
       color: 0xffffff,
@@ -544,12 +730,14 @@ Page({
     heartRate.onCurrentChange(this.state.heartRateChangeCallback)
 
     createWidget(widget.IMG, {
+      show_level: NORMAL_ONLY,
       x: 279,
       y: 463,
       src: 'contagiros.png',
     })
     // 10) BioCharge
     this.state.biochargeText = createWidget(widget.TEXT_FONT, {
+      show_level: NORMAL_ONLY,
       x: 155, y: 433, w: 100, h: 35,
       color: 0xffffff,
       text_size: 28,
@@ -597,7 +785,7 @@ Page({
 
     Object.keys(ALERT_DEFS).forEach((key) => {
       const def = ALERT_DEFS[key]
-      const alertImg = createWidget(widget.IMG, { x: def.x, y: def.y, src: def.src })
+      const alertImg = createWidget(widget.IMG, { x: def.x, y: def.y, src: def.src, show_level: NORMAL_ONLY })
       alertImg.setProperty(prop.VISIBLE, false)
       this.state.alertWidgets[key] = alertImg
       this.state.alertActive[key] = false
@@ -713,15 +901,7 @@ Page({
     const SHORTCUT_IMG = 'shortcut.png'
 
     const SHORTCUT_DEFS = {
-      // --- Atalhos de treino/atividade -------------------------------------
-      // ATENÇÃO: o enum data_type só documenta este conjunto fixo de atalhos
-      // de atividade: OUTDOOR_RUNNING, WALKING, OUTDOOR_CYCLING,
-      // FREE_TRAINING, POOL_SWIMMING, OPEN_WATER_SWIMMING, PHN (Sports
-      // Coach) e BREATH_TRAIN. NÃO existe um "STRENGTH_TRAINING" publicamente
-      // documentado — usei FREE_TRAINING (Treino Livre) por ser o mais
-      // próximo de "treino de força" disponível oficialmente. Teste no
-      // simulador/relógio: se o seu firmware não mapear esse atalho para a
-      // tela de força, é uma limitação do enum público, não do código.
+      // --- Atalhos de treino/atividade
       strengthTraining: { x: 214, y: 123, w: 52, h: 47, type: data_type.FREE_TRAINING },
       outdoorCycling: { x: 60, y: 309, w: 52, h: 47, type: data_type.OUTDOOR_CYCLING },
       outdoorRunning: { x: 365, y: 309, w: 52, h: 47, type: data_type.OUTDOOR_RUNNING },
@@ -740,6 +920,7 @@ Page({
     Object.keys(SHORTCUT_DEFS).forEach((key) => {
       const def = SHORTCUT_DEFS[key]
       this.state.shortcutWidgets[key] = createWidget(widget.IMG_CLICK, {
+        show_level: NORMAL_ONLY,
         x: def.x,
         y: def.y,
         w: def.w,

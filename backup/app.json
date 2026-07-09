@@ -1,7 +1,7 @@
 {
   "configVersion": "v2",
   "app": {
-    "appId": 1119800,
+    "appId": 29805,
     "appName": "Japan",
     "appType": "watchface",
     "version": {
@@ -36,7 +36,7 @@
           "main": 1,
           "editable": 0,
           "lockscreen": 1,
-          "highCost": 1
+          "hightCost": 1
         }
       },
       "platforms": [
@@ -62,7 +62,7 @@
           "main": 1,
           "editable": 0,
           "lockscreen": 1,
-          "highCost": 1
+          "hightCost": 1
         }
       },
       "platforms": [
@@ -88,7 +88,7 @@
           "main": 1,
           "editable": 0,
           "lockscreen": 1,
-          "highCost": 1
+          "hightCost": 1
         }
       },
       "platforms": [
