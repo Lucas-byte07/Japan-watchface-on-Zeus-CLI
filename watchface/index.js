@@ -621,7 +621,7 @@ Page({
 
     this.state.dateText = createWidget(widget.TEXT, {
       show_level: NORMAL_ONLY,
-      x: 75, y: 367, w: 100, h: 17,
+      x: 75, y: 367, w: 100, h: 15,
       color: 0xff003d, // same color as the hour text
       text_size: 19,
       align_h: align.CENTER_H, align_v: align.CENTER_V,
