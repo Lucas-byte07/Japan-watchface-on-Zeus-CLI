@@ -621,7 +621,7 @@ Page({
 
     this.state.dateText = createWidget(widget.TEXT, {
       show_level: NORMAL_ONLY,
-      x: 76, y: 368, w: 100, h: 20,
+      x: 75, y: 367, w: 100, h: 17,
       color: 0xff003d, // same color as the hour text
       text_size: 19,
       align_h: align.CENTER_H, align_v: align.CENTER_V,
@@ -703,12 +703,6 @@ Page({
     // =====================================================================
     // 20) Alert system (battery / UVI / BPM / BioCharge)
     // =====================================================================
-    // Originally only battery had a blink alert, each with its own
-    // setInterval. Optimized here:
-    //  - each alert is one { x, y, src } entry in ALERT_DEFS;
-    //  - all alert widgets are created in a single loop;
-    //  - ONE shared blink interval runs only while at least one alert is active;
-    //  - setAlertState(key, bool) is idempotent (safe to call repeatedly).
     const ALERT_BLINK_INTERVAL_MS = 500
     const BATTERY_ALERT_THRESHOLD = 15    // % — fires when battery < 15
     const UVI_ALERT_THRESHOLD = 10        // fires when UVI >= 10
@@ -718,8 +712,6 @@ Page({
     const ALERT_IMG_MENOR = 'alertamenor.png' // used for low BioCharge
 
     const ALERT_DEFS = {
-      // kept at its original position/image; switch src to ALERT_IMG_MENOR
-      // to treat it as a "low" style alert like BioCharge.
       battery: { x: 325, y: 92, src: ALERT_IMG_MAIOR },
       uvi: { x: 173, y: 10, src: ALERT_IMG_MAIOR },
       bpm: { x: 303, y: 424, src: ALERT_IMG_MAIOR },
