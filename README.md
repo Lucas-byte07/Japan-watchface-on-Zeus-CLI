@@ -1,10 +1,10 @@
 # Japan Watchface
 Car and Japan themed data-heavy watchface developed for the Amazfit T-Rex 3, Amazfit T-rex 3 pro (48mm) and Amazfit Balance 2  
-![Image not found](assets/icon.png)
+<img width="480" height="480" alt="icon" src="https://github.com/user-attachments/assets/820c0afc-2a58-47ef-bd78-1605341cb848" />  
+How the watchface looks like in real life: https://github.com/user-attachments/assets/12e0b198-a676-4498-b95b-8c152364ff9b
 ## Tools used
 - Zepp OS SDK v3.5
 - Zeus CLI
-- FontTools (pyftsubset) para otimização de fontes nativas
 ## Watchface features
 -12 fps animation of cars going around Japan  
 -Clock (hours, minutes and seconds) including a countdown shortcut  
