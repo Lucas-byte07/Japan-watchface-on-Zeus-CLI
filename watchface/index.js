@@ -151,7 +151,7 @@ Page({
       align_v: align.CENTER_V,
       text_style: text_style.NONE,
       font: FONT_PATH,
-      text: pad2(time.getHours()),
+      text: pad2(time.getFormatHour()),
     })
 
     this.state.minuteText = createWidget(widget.TEXT, {
@@ -184,11 +184,11 @@ Page({
       text: pad2(time.getSeconds()),
     })
 
-    this.state.lastHour = pad2(time.getHours())
+    this.state.lastHour = pad2(time.getFormatHour())
     this.state.lastMinute = pad2(time.getMinutes())
 
     const updateHourMinute = () => {
-      const newHour = pad2(this.state.time.getHours())
+      const newHour = pad2(this.state.time.getFormatHour())
       if (newHour !== this.state.lastHour) {
         this.state.hourText.setProperty(prop.TEXT, newHour)
         if (this.state.aodHourText) this.state.aodHourText.setProperty(prop.TEXT, newHour)
@@ -342,7 +342,7 @@ Page({
       align_v: align.CENTER_V,
       text_style: text_style.NONE,
       font: FONT_PATH,
-      text: pad2(time.getHours()),
+      text: pad2(time.getFormatHour()),
     })
 
     this.state.aodMinuteText = createWidget(widget.TEXT, {
